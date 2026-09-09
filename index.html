@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Turnos - Super 900</title>
+    <style>
+        :root {
+            --brand-color: #e63946;
+            --bg-color: #f8f9fa;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+        h1 {
+            color: #2b2d42;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        p {
+            color: #6c757d;
+            margin-bottom: 30px;
+            font-size: 15px;
+        }
+        .btn-menu {
+            display: block;
+            background-color: white;
+            color: #2b2d42;
+            border: 2px solid #e5e7eb;
+            padding: 18px 20px;
+            margin: 15px 0;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .btn-menu:hover {
+            border-color: var(--brand-color);
+            color: var(--brand-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(230, 57, 70, 0.1);
+        }
+        .btn-primary {
+            background-color: var(--brand-color);
+            color: white;
+            border-color: var(--brand-color);
+        }
+        .btn-primary:hover {
+            background-color: #c1121f;
+            color: white;
+        }
+        .footer {
+            margin-top: 25px;
+            font-size: 13px;
+            color: #adb5bd;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Super 900</h1>
+        <p>Sistema de Gestión de Turnos</p>
+
+        <a href="kiosco.html" class="btn-menu btn-primary">🖥️ Pantalla Kiosco (QR Tablet)</a>
+        <a href="admin.html" class="btn-menu">⚙️ Panel de Control (Personal)</a>
+        <a href="cliente.html" class="btn-menu">📱 Vista de Prueba (Cliente)</a>
+
+        <div class="footer">
+            Charcutería &bull; Control Operativo
+        </div>
+    </div>
+
+</body>
+</html>
