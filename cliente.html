@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turnos Charcutería</title>
+    <style>
+        :root {
+            --brand-color: #e63946; /* Ajusta al rojo de tu marca */
+            --bg-color: #f8f9fa;
+        }
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        input {
+            width: 90%;
+            padding: 15px;
+            margin: 15px 0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        button {
+            background-color: var(--brand-color);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background-color: #c1121f;
+        }
+        .hidden { display: none; }
+        .numero-turno {
+            font-size: 80px;
+            font-weight: 900;
+            color: var(--brand-color);
+            margin: 10px 0;
+        }
+        .alerta-llamado {
+            animation: parpadeo 1s infinite;
+            color: #d62828;
+            font-weight: bold;
+            font-size: 24px;
+        }
+        @keyframes parpadeo {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        /* Loader */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--brand-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="card" id="pantalla-solicitud">
+        <h2>Bienvenido a Charcutería</h2>
+        <p>Ingresa tu nombre para tomar un turno</p>
+        <input type="text" id="nombre" placeholder="Ej: Rhomina Gómez" required>
+        <button id="btn-solicitar" onclick="pedirTurno()">Tomar Turno</button>
+        <div id="loading" class="loader hidden"></div>
+        <p id="error-msg" style="color: red;" class="hidden"></p>
+    </div>
+
+    <div class="card hidden" id="pantalla-turno">
+        <p>Tu número es:</p>
+        <div class="numero-turno" id="mi-numero">--</div>
+        <p style="color: #666;">Hola, <span id="nombre-display"></span></p>
+        <hr style="border: 1px solid #eee; margin: 20px 0;">
+        <h3 style="color: #666;">Atendiendo ahora:</h3>
+        <div class="numero-turno" style="font-size: 60px; color: #333;" id="turno-actual">--</div>
+        <div id="estado-mensaje">Por favor, espera tu llamado.</div>
+    </div>
+
+    <script>
+        // ¡REEMPLAZA ESTO POR TU URL DE GOOGLE APPS SCRIPT!
+        const API_URL = "https://script.google.com/macros/s/AKfycbwtrxytzOIXbNGWlWxZlt2gY5vpEmnJEf6Rq-Pc3V2wGbHlXlahO3vXbuQ2AMuzOsDz/exec";
+        
+        let miTurno = null;
+        let intervaloCheck = null;
+
+        async function pedirTurno() {
+            const nombre = document.getElementById("nombre").value;
+            const btn = document.getElementById("btn-solicitar");
+            const loading = document.getElementById("loading");
+            const errorMsg = document.getElementById("error-msg");
+
+            if(nombre.trim() === "") {
+                errorMsg.innerText = "Por favor, ingresa tu nombre.";
+                errorMsg.classList.remove("hidden");
+                return;
+            }
+
+            // UI feedback
+            btn.classList.add("hidden");
+            loading.classList.remove("hidden");
+            errorMsg.classList.add("hidden");
+
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ nombre: nombre })
+                });
+                const data = await res.json();
+
+                if(data.exito) {
+                    miTurno = data.miTurno;
+                    document.getElementById("pantalla-solicitud").classList.add("hidden");
+                    document.getElementById("pantalla-turno").classList.remove("hidden");
+                    
+                    document.getElementById("mi-numero").innerText = miTurno;
+                    document.getElementById("nombre-display").innerText = nombre;
+                    
+                    iniciarMonitoreo();
+                } else {
+                    throw new Error(data.error);
+                }
+            } catch (error) {
+                errorMsg.innerText = "Error de conexión. Intenta de nuevo.";
+                errorMsg.classList.remove("hidden");
+                btn.classList.remove("hidden");
+                loading.classList.add("hidden");
+            }
+        }
+
+        function iniciarMonitoreo() {
+            // Consulta el estado cada 6 segundos para no saturar la API
+            intervaloCheck = setInterval(async () => {
+                try {
+                    const res = await fetch(API_URL);
+                    const data = await res.json();
+                    
+                    if(data.exito) {
+                        document.getElementById("turno-actual").innerText = data.turnoActual;
+                        
+                        // Lógica de alerta
+                        if (data.turnoActual == miTurno) {
+                            const msj = document.getElementById("estado-mensaje");
+                            msj.innerText = "¡ES TU TURNO! ACÉRCATE AL MOSTRADOR";
+                            msj.className = "alerta-llamado";
+                            
+                            // Vibración (patrón: vibra, pausa, vibra)
+                            if (navigator.vibrate) navigator.vibrate([1000, 500, 1000, 500, 1000]); 
+                            
+                            // Detener consultas porque ya fue llamado
+                            clearInterval(intervaloCheck);
+                        }
+                    }
+                } catch (e) {
+                    console.log("Reintentando conexión...");
+                }
+            }, 6000); 
+        }
+    </script>
+</body>
+</html>
