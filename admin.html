@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel de Control - Charcutería</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; text-align: center; }
+        .panel { background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .numero { font-size: 100px; color: #e63946; font-weight: bold; margin: 20px 0; }
+        button { background: #2a9d8f; color: white; border: none; padding: 20px; width: 100%; font-size: 24px; border-radius: 10px; cursor: pointer; }
+        button:hover { background: #21867a; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <h2>Turno Actual</h2>
+        <div class="numero" id="turno-actual">--</div>
+        <button id="btn-siguiente" onclick="llamarSiguiente()">Llamar Siguiente</button>
+    </div>
+
+    <script>
+        // ¡REEMPLAZA ESTO POR TU URL DE GOOGLE APPS SCRIPT!
+        const API_URL = "https://script.google.com/macros/s/AKfycbwtrxytzOIXbNGWlWxZlt2gY5vpEmnJEf6Rq-Pc3V2wGbHlXlahO3vXbuQ2AMuzOsDz/exec";
+
+        async function obtenerActual() {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            if(data.exito) {
+                document.getElementById("turno-actual").innerText = data.turnoActual;
+            }
+        }
+
+        async function llamarSiguiente() {
+            document.getElementById("btn-siguiente").disabled = true;
+            document.getElementById("btn-siguiente").innerText = "Actualizando...";
+            
+            try {
+                // Hacemos un POST con un comando especial para avanzar
+                await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ accion: "siguiente" })
+                });
+                await obtenerActual();
+            } catch (e) {
+                alert("Error al avanzar turno.");
+            }
+            
+            document.getElementById("btn-siguiente").disabled = false;
+            document.getElementById("btn-siguiente").innerText = "Llamar Siguiente";
+        }
+
+        // Carga inicial y refresco
+        obtenerActual();
+        setInterval(obtenerActual, 5000);
+    </script>
+</body>
+</html>
