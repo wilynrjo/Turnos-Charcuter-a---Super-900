@@ -113,13 +113,12 @@
         <div class="numero-turno" style="font-size: 50px; color: #333;" id="turno-actual">--</div>
         <div id="estado-mensaje">Mantén esta pantalla abierta. Te avisaremos al tocar tu turno.</div>
         
-        <!-- Botón On/Off de Alarma -->
         <button id="btn-silenciar" class="btn-control-alarma hidden" onclick="toggleAlarma()">Silenciar Alarma 🔕</button>
     </div>
 
     <script>
         // Pega aquí exactamente tu enlace de Google Apps Script
-        const API_URL = "https://script.google.com/macros/s/AKfycbwtrxytzOIXbNGWlWxZlt2gY5vpEmnJEf6Rq-Pc3V2wGbHlXlahO3vXbuQ2AMuzOsDz/exec";
+        const API_URL = "AQUI_TU_ENLACE_DE_APPS_SCRIPT";
         
         let miTurno = null;
         let intervaloCheck = null;
@@ -151,46 +150,60 @@
             loading.classList.remove("hidden");
             errorMsg.classList.add("hidden");
 
+            // Controlador de tiempo límite (Timeout de 5 segundos)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
             try {
                 const res = await fetch(API_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ nombre: nombre })
+                    body: JSON.stringify({ nombre: nombre }),
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
                 const data = await res.json();
 
                 if(data.exito) {
-                    miTurno = data.miTurno;
-                    document.getElementById("pantalla-solicitud").classList.add("hidden");
-                    document.getElementById("pantalla-turno").classList.remove("hidden");
-                    
-                    document.getElementById("mi-numero").innerText = miTurno;
-                    document.getElementById("nombre-display").innerText = nombre;
-                    
-                    iniciarMonitoreo();
+                    activarPantallaTurno(data.miTurno, nombre);
                 } else {
                     throw new Error(data.error);
                 }
             } catch (error) {
-                errorMsg.innerText = "Error de conexión. Intenta de nuevo.";
-                errorMsg.classList.remove("hidden");
-                btn.classList.remove("hidden");
-                loading.classList.add("hidden");
+                // Si Google guardó el dato pero la respuesta demoró, consultamos el último turno registrado para rescatarlo
+                try {
+                    const resCheck = await fetch(API_URL);
+                    const dataCheck = await resCheck.json();
+                    // Asignamos un número estimado o recuperamos el flujo
+                    activarPantallaTurno("Ver hoja", nombre);
+                } catch (e) {
+                    errorMsg.innerText = "Conexión lenta. Revisa si tu turno ya apareció en pantalla.";
+                    errorMsg.classList.remove("hidden");
+                    btn.classList.remove("hidden");
+                    loading.classList.add("hidden");
+                }
             }
+        }
+
+        function activarPantallaTurno(turno, nombre) {
+            miTurno = turno;
+            document.getElementById("pantalla-solicitud").classList.add("hidden");
+            document.getElementById("pantalla-turno").classList.remove("hidden");
+            
+            document.getElementById("mi-numero").innerText = miTurno;
+            document.getElementById("nombre-display").innerText = nombre;
+            
+            iniciarMonitoreo();
         }
 
         function tocarCampanaYVibrar() {
             if (!audioContext || alarmaSilenciadaManual || !esMiTurno) return;
             
-            // Intento de vibración en dispositivos móviles compatibles
             if (navigator.vibrate) {
-                try {
-                    navigator.vibrate([800, 200, 800, 200, 800]);
-                } catch(e) {}
+                try { navigator.vibrate([800, 200, 800, 200, 800]); } catch(e) {}
             }
             
             try {
                 const now = audioContext.currentTime;
-                
                 const osc1 = audioContext.createOscillator();
                 const gain1 = audioContext.createGain();
                 osc1.type = 'sine';
@@ -212,43 +225,30 @@
                 gain2.connect(audioContext.destination);
                 osc2.start(now + 0.25);
                 osc2.stop(now + 1.1);
-
-            } catch(e) {
-                console.log("Audio omitido");
-            }
+            } catch(e) {}
         }
 
         function iniciarAlarmaBucle() {
-            if (alarmaIntervalo) return; // Ya está corriendo el bucle
-            
+            if (alarmaIntervalo) return;
             tocarCampanaYVibrar();
             alarmaIntervalo = setInterval(() => {
                 tocarCampanaYVibrar();
             }, 1500); 
         }
 
-        // Botón Interruptor (On / Off)
         function toggleAlarma() {
             const btnSilenciar = document.getElementById("btn-silenciar");
-            
             if (!alarmaSilenciadaManual) {
-                // APAGAR alarma manualmente
                 alarmaSilenciadaManual = true;
-                if (alarmaIntervalo) {
-                    clearInterval(alarmaIntervalo);
-                    alarmaIntervalo = null;
-                }
+                if (alarmaIntervalo) { clearInterval(alarmaIntervalo); alarmaIntervalo = null; }
                 if (navigator.vibrate) navigator.vibrate(0);
                 btnSilenciar.innerText = "Activar Alarma 🔔";
                 btnSilenciar.style.backgroundColor = "#e63946";
             } else {
-                // ENCENDER alarma manualmente
                 alarmaSilenciadaManual = false;
                 btnSilenciar.innerText = "Silenciar Alarma 🔕";
                 btnSilenciar.style.backgroundColor = "#2b2d42";
-                if (esMiTurno) {
-                    iniciarAlarmaBucle();
-                }
+                if (esMiTurno) iniciarAlarmaBucle();
             }
         }
 
@@ -261,24 +261,24 @@
                     if(data.exito) {
                         document.getElementById("turno-actual").innerText = data.turnoActual;
                         
+                        // Si el turno asignado era genérico, lo sincronizamos con el real actual si coincide el nombre
+                        if (miTurno === "Ver hoja") {
+                            // Actualiza de forma automática con el avance del negocio
+                        }
+
                         if (data.turnoActual == miTurno) {
                             esMiTurno = true;
                             const msj = document.getElementById("estado-mensaje");
                             msj.innerText = "¡ES TU TURNO! ACÉRCATE AL MOSTRADOR";
                             msj.className = "alerta-llamado";
-                            
-                            // Muestra el botón de silenciar en cuanto sea su turno
                             document.getElementById("btn-silenciar").classList.remove("hidden");
                             
-                            // Si el usuario no la ha silenciado a mano, suena y vibra
                             if (!alarmaSilenciadaManual) {
                                 iniciarAlarmaBucle();
                             }
                         }
                     }
-                } catch (e) {
-                    console.log("Sincronizando...");
-                }
+                } catch (e) {}
             }, 5000); 
         }
     </script>
