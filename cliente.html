@@ -53,15 +53,15 @@
             transition: background 0.3s;
         }
         button:hover { background-color: #c1121f; }
-        .btn-silenciar {
+        .btn-control-alarma {
             background-color: #2b2d42;
             color: white;
             margin-top: 20px;
             padding: 18px;
-            font-size: 20px;
+            font-size: 18px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.15);
         }
-        .btn-silenciar:hover { background-color: #1d3557; }
+        .btn-control-alarma:hover { background-color: #1d3557; }
         .hidden { display: none; }
         .numero-turno {
             font-size: 80px;
@@ -113,17 +113,20 @@
         <div class="numero-turno" style="font-size: 50px; color: #333;" id="turno-actual">--</div>
         <div id="estado-mensaje">Mantén esta pantalla abierta. Te avisaremos al tocar tu turno.</div>
         
-        <button id="btn-silenciar" class="btn-silenciar hidden" onclick="silenciarAlarma()">Silenciar Alarma 🔕</button>
+        <!-- Botón On/Off de Alarma -->
+        <button id="btn-silenciar" class="btn-control-alarma hidden" onclick="toggleAlarma()">Silenciar Alarma 🔕</button>
     </div>
 
     <script>
+        // Pega aquí exactamente tu enlace de Google Apps Script
         const API_URL = "https://script.google.com/macros/s/AKfycbwtrxytzOIXbNGWlWxZlt2gY5vpEmnJEf6Rq-Pc3V2wGbHlXlahO3vXbuQ2AMuzOsDz/exec";
         
         let miTurno = null;
         let intervaloCheck = null;
         let audioContext = null;
         let alarmaIntervalo = null;
-        let alarmaActiva = false;
+        let esMiTurno = false;
+        let alarmaSilenciadaManual = false;
 
         function inicializarAudio() {
             if (!audioContext) {
@@ -176,11 +179,13 @@
         }
 
         function tocarCampanaYVibrar() {
-            if (!audioContext || !alarmaActiva) return;
+            if (!audioContext || alarmaSilenciadaManual || !esMiTurno) return;
             
-            // Activa la vibración fuerte en cada ciclo de la alarma
+            // Intento de vibración en dispositivos móviles compatibles
             if (navigator.vibrate) {
-                navigator.vibrate([1000, 300, 1000, 300, 1000]);
+                try {
+                    navigator.vibrate([800, 200, 800, 200, 800]);
+                } catch(e) {}
             }
             
             try {
@@ -214,21 +219,37 @@
         }
 
         function iniciarAlarmaBucle() {
-            if (alarmaActiva) return;
-            alarmaActiva = true;
-            document.getElementById("btn-silenciar").classList.remove("hidden");
+            if (alarmaIntervalo) return; // Ya está corriendo el bucle
             
             tocarCampanaYVibrar();
             alarmaIntervalo = setInterval(() => {
-                if (alarmaActiva) tocarCampanaYVibrar();
-            }, 1300); 
+                tocarCampanaYVibrar();
+            }, 1500); 
         }
 
-        function silenciarAlarma() {
-            alarmaActiva = false;
-            if (alarmaIntervalo) clearInterval(alarmaIntervalo);
-            document.getElementById("btn-silenciar").classList.add("hidden");
-            if (navigator.vibrate) navigator.vibrate(0); // Detiene la vibración
+        // Botón Interruptor (On / Off)
+        function toggleAlarma() {
+            const btnSilenciar = document.getElementById("btn-silenciar");
+            
+            if (!alarmaSilenciadaManual) {
+                // APAGAR alarma manualmente
+                alarmaSilenciadaManual = true;
+                if (alarmaIntervalo) {
+                    clearInterval(alarmaIntervalo);
+                    alarmaIntervalo = null;
+                }
+                if (navigator.vibrate) navigator.vibrate(0);
+                btnSilenciar.innerText = "Activar Alarma 🔔";
+                btnSilenciar.style.backgroundColor = "#e63946";
+            } else {
+                // ENCENDER alarma manualmente
+                alarmaSilenciadaManual = false;
+                btnSilenciar.innerText = "Silenciar Alarma 🔕";
+                btnSilenciar.style.backgroundColor = "#2b2d42";
+                if (esMiTurno) {
+                    iniciarAlarmaBucle();
+                }
+            }
         }
 
         function iniciarMonitoreo() {
@@ -241,11 +262,18 @@
                         document.getElementById("turno-actual").innerText = data.turnoActual;
                         
                         if (data.turnoActual == miTurno) {
+                            esMiTurno = true;
                             const msj = document.getElementById("estado-mensaje");
                             msj.innerText = "¡ES TU TURNO! ACÉRCATE AL MOSTRADOR";
                             msj.className = "alerta-llamado";
                             
-                            iniciarAlarmaBucle();
+                            // Muestra el botón de silenciar en cuanto sea su turno
+                            document.getElementById("btn-silenciar").classList.remove("hidden");
+                            
+                            // Si el usuario no la ha silenciado a mano, suena y vibra
+                            if (!alarmaSilenciadaManual) {
+                                iniciarAlarmaBucle();
+                            }
                         }
                     }
                 } catch (e) {
