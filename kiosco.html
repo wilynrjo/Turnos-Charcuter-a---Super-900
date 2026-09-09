@@ -2,8 +2,9 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Tablet - Kiosco de Turnos</title>
-    <!-- Librería profesional para QR -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiosco - Tomar Turno</title>
+    <!-- Librería para generar el código QR -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         body {
@@ -14,39 +15,38 @@
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #e63946; /* Color de marca */
+            background-color: #e63946; /* Color corporativo */
             color: white;
             text-align: center;
         }
         .contenedor-qr {
             background: white;
-            padding: 40px;
+            padding: 35px;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            margin: 30px;
+            margin: 25px;
         }
-        h1 { font-size: 3em; margin-bottom: 10px; }
-        p { font-size: 1.5em; opacity: 0.9; }
+        h1 { font-size: 2.5em; margin-bottom: 10px; }
+        p { font-size: 1.3em; opacity: 0.9; }
         #qrcode img { margin: 0 auto; }
     </style>
 </head>
 <body>
-    <h1>Bienvenido a Charcutería</h1>
-    <p>Escanea este código con la cámara de tu celular<br>para tomar tu turno y evitar filas.</p>
+    <h1>Super 900</h1>
+    <p>Escanea con tu celular para tomar tu turno en Charcutería</p>
     
     <div class="contenedor-qr">
         <div id="qrcode"></div>
     </div>
 
     <script>
-        // Dejaremos esto vacío por un momento. 
-        // Cuando Vercel nos dé nuestra URL final, la pondremos aquí.
-        const urlFinalVercel = "https://charcuteriasuper900.vercel.app/"; 
+        // AQUÍ ESTÁ EL CAMBIO CLAVE: Apunta directo a cliente.html
+        const urlClienteDirecta = "https://charcuteriasuper900.vercel.app/cliente.html"; 
         
         new QRCode(document.getElementById("qrcode"), {
-            text: urlFinalVercel,
-            width: 300,
-            height: 300,
+            text: urlClienteDirecta,
+            width: 280,
+            height: 280,
             colorDark : "#000000",
             colorLight : "#ffffff",
             correctLevel : QRCode.CorrectLevel.H
