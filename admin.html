@@ -2,12 +2,57 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Control - Charcutería</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; text-align: center; }
-        .panel { background: white; max-width: 500px; margin: 0 auto; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .numero { font-size: 100px; color: #e63946; font-weight: bold; margin: 20px 0; }
-        button { background: #2a9d8f; color: white; border: none; padding: 20px; width: 100%; font-size: 24px; border-radius: 10px; cursor: pointer; }
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            background: #f8f9fa; 
+            padding: 20px; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .panel { 
+            background: white; 
+            width: 100%;
+            max-width: 450px; 
+            padding: 40px 30px; 
+            border-radius: 16px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08); 
+            text-align: center; 
+        }
+        h2 { color: #2b2d42; margin-bottom: 5px; }
+        .numero { 
+            font-size: 90px; 
+            color: #e63946; 
+            font-weight: 900; 
+            margin: 10px 0; 
+        }
+        .nombre-cliente {
+            font-size: 24px;
+            color: #1d3557;
+            font-weight: bold;
+            background: #f1faee;
+            padding: 12px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 2px dashed #a8dadc;
+        }
+        button { 
+            background: #2a9d8f; 
+            color: white; 
+            border: none; 
+            padding: 18px; 
+            width: 100%; 
+            font-size: 20px; 
+            font-weight: bold;
+            border-radius: 12px; 
+            cursor: pointer; 
+            transition: background 0.3s;
+        }
         button:hover { background: #21867a; }
         button:disabled { background: #ccc; cursor: not-allowed; }
     </style>
@@ -16,43 +61,57 @@
     <div class="panel">
         <h2>Turno Actual</h2>
         <div class="numero" id="turno-actual">--</div>
-        <button id="btn-siguiente" onclick="llamarSiguiente()">Llamar Siguiente</button>
+        
+        <div class="nombre-cliente" id="nombre-actual">Cliente: --</div>
+        
+        <button id="btn-siguiente" onclick="llamarSiguiente()">Llamar Siguiente 📢</button>
     </div>
 
     <script>
-        // ¡REEMPLAZA ESTO POR TU URL DE GOOGLE APPS SCRIPT!
+        // Pega aquí exactamente tu enlace de Google Apps Script
         const API_URL = "https://script.google.com/macros/s/AKfycbwtrxytzOIXbNGWlWxZlt2gY5vpEmnJEf6Rq-Pc3V2wGbHlXlahO3vXbuQ2AMuzOsDz/exec";
 
         async function obtenerActual() {
-            const res = await fetch(API_URL);
-            const data = await res.json();
-            if(data.exito) {
-                document.getElementById("turno-actual").innerText = data.turnoActual;
+            try {
+                const res = await fetch(API_URL);
+                const data = await res.json();
+                if(data.exito) {
+                    document.getElementById("turno-actual").innerText = data.turnoActual;
+                    document.getElementById("nombre-actual").innerText = "Cliente: " + data.nombreActual;
+                }
+            } catch (e) {
+                console.log("Error actualizando panel");
             }
         }
 
         async function llamarSiguiente() {
-            document.getElementById("btn-siguiente").disabled = true;
-            document.getElementById("btn-siguiente").innerText = "Actualizando...";
+            const btn = document.getElementById("btn-siguiente");
+            btn.disabled = true;
+            btn.innerText = "Avanzando...";
             
             try {
-                // Hacemos un POST con un comando especial para avanzar
-                await fetch(API_URL, {
+                const res = await fetch(API_URL, {
                     method: 'POST',
                     body: JSON.stringify({ accion: "siguiente" })
                 });
-                await obtenerActual();
+                const data = await res.json();
+                
+                if(data.exito) {
+                    await obtenerActual();
+                } else {
+                    alert(data.error || "No hay más turnos pendientes.");
+                }
             } catch (e) {
-                alert("Error al avanzar turno.");
+                alert("Error de conexión al avanzar turno.");
             }
             
-            document.getElementById("btn-siguiente").disabled = false;
-            document.getElementById("btn-siguiente").innerText = "Llamar Siguiente";
+            btn.disabled = false;
+            btn.innerText = "Llamar Siguiente 📢";
         }
 
-        // Carga inicial y refresco
+        // Carga inicial y refresco automático cada 4 segundos
         obtenerActual();
-        setInterval(obtenerActual, 5000);
+        setInterval(obtenerActual, 4000);
     </script>
 </body>
 </html>
