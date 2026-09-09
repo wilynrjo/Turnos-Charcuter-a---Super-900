@@ -118,7 +118,7 @@
 
     <script>
         // Pega aquí exactamente tu enlace de Google Apps Script
-        const API_URL = "AQUI_TU_ENLACE_DE_APPS_SCRIPT";
+        const API_URL = "https://script.google.com/macros/s/AKfycbwtrxytzOIXbNGWlWxZlt2gY5vpEmnJEf6Rq-Pc3V2wGbHlXlahO3vXbuQ2AMuzOsDz/exec";
         
         let miTurno = null;
         let intervaloCheck = null;
@@ -150,17 +150,11 @@
             loading.classList.remove("hidden");
             errorMsg.classList.add("hidden");
 
-            // Controlador de tiempo límite (Timeout de 5 segundos)
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
-
             try {
                 const res = await fetch(API_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ nombre: nombre }),
-                    signal: controller.signal
+                    body: JSON.stringify({ nombre: nombre })
                 });
-                clearTimeout(timeoutId);
                 const data = await res.json();
 
                 if(data.exito) {
@@ -169,14 +163,13 @@
                     throw new Error(data.error);
                 }
             } catch (error) {
-                // Si Google guardó el dato pero la respuesta demoró, consultamos el último turno registrado para rescatarlo
+                // Si la red parpadea pero el dato se registró, le damos el acceso consultando el último ID
                 try {
                     const resCheck = await fetch(API_URL);
                     const dataCheck = await resCheck.json();
-                    // Asignamos un número estimado o recuperamos el flujo
-                    activarPantallaTurno("Ver hoja", nombre);
+                    activarPantallaTurno("Revisar", nombre);
                 } catch (e) {
-                    errorMsg.innerText = "Conexión lenta. Revisa si tu turno ya apareció en pantalla.";
+                    errorMsg.innerText = "Error de conexión. Intenta de nuevo.";
                     errorMsg.classList.remove("hidden");
                     btn.classList.remove("hidden");
                     loading.classList.add("hidden");
@@ -197,10 +190,6 @@
 
         function tocarCampanaYVibrar() {
             if (!audioContext || alarmaSilenciadaManual || !esMiTurno) return;
-            
-            if (navigator.vibrate) {
-                try { navigator.vibrate([800, 200, 800, 200, 800]); } catch(e) {}
-            }
             
             try {
                 const now = audioContext.currentTime;
@@ -241,7 +230,6 @@
             if (!alarmaSilenciadaManual) {
                 alarmaSilenciadaManual = true;
                 if (alarmaIntervalo) { clearInterval(alarmaIntervalo); alarmaIntervalo = null; }
-                if (navigator.vibrate) navigator.vibrate(0);
                 btnSilenciar.innerText = "Activar Alarma 🔔";
                 btnSilenciar.style.backgroundColor = "#e63946";
             } else {
@@ -260,11 +248,6 @@
                     
                     if(data.exito) {
                         document.getElementById("turno-actual").innerText = data.turnoActual;
-                        
-                        // Si el turno asignado era genérico, lo sincronizamos con el real actual si coincide el nombre
-                        if (miTurno === "Ver hoja") {
-                            // Actualiza de forma automática con el avance del negocio
-                        }
 
                         if (data.turnoActual == miTurno) {
                             esMiTurno = true;
