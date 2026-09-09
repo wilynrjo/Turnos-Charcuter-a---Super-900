@@ -19,52 +19,61 @@
             background: white; 
             width: 100%;
             max-width: 450px; 
-            padding: 40px 30px; 
+            padding: 30px; 
             border-radius: 16px; 
             box-shadow: 0 10px 25px rgba(0,0,0,0.08); 
             text-align: center; 
         }
         h2 { color: #2b2d42; margin-bottom: 5px; }
         .numero { 
-            font-size: 90px; 
+            font-size: 80px; 
             color: #e63946; 
             font-weight: 900; 
-            margin: 10px 0; 
+            margin: 5px 0; 
         }
         .nombre-cliente {
-            font-size: 24px;
+            font-size: 22px;
             color: #1d3557;
             font-weight: bold;
             background: #f1faee;
-            padding: 12px;
+            padding: 10px;
             border-radius: 10px;
-            margin: 20px 0;
+            margin: 15px 0;
             border: 2px dashed #a8dadc;
         }
         button { 
             background: #2a9d8f; 
             color: white; 
             border: none; 
-            padding: 18px; 
+            padding: 16px; 
             width: 100%; 
-            font-size: 20px; 
+            font-size: 18px; 
             font-weight: bold;
-            border-radius: 12px; 
+            border-radius: 10px; 
             cursor: pointer; 
+            margin-top: 10px;
             transition: background 0.3s;
         }
         button:hover { background: #21867a; }
         button:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-reset {
+            background-color: #e63946;
+            font-size: 15px;
+            padding: 12px;
+            margin-top: 15px;
+        }
+        .btn-reset:hover { background-color: #c1121f; }
     </style>
 </head>
 <body>
     <div class="panel">
         <h2>Turno Actual</h2>
-        <div class="numero" id="turno-actual">--</div>
+        <div class="numero" id="turno-actual">0</div>
         
         <div class="nombre-cliente" id="nombre-actual">Cliente: --</div>
         
         <button id="btn-siguiente" onclick="llamarSiguiente()">Llamar Siguiente 📢</button>
+        <button class="btn-reset" onclick="resetearSistema()">Reiniciar Turnos a 0 🔄</button>
     </div>
 
     <script>
@@ -109,7 +118,28 @@
             btn.innerText = "Llamar Siguiente 📢";
         }
 
-        // Carga inicial y refresco automático cada 4 segundos
+        async function resetearSistema() {
+            if (!confirm("¿Estás seguro de reiniciar los turnos a 0 y borrar el historial actual?")) return;
+            
+            try {
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ accion: "reset" })
+                });
+                const data = await res.json();
+                
+                if(data.exito) {
+                    document.getElementById("turno-actual").innerText = "0";
+                    document.getElementById("nombre-actual").innerText = "Cliente: --";
+                    alert("Sistema reiniciado a 0 correctamente.");
+                } else {
+                    alert("Error al resetear el sistema.");
+                }
+            } catch (e) {
+                alert("Error de conexión al resetear.");
+            }
+        }
+
         obtenerActual();
         setInterval(obtenerActual, 4000);
     </script>
